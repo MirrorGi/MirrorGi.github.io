@@ -1,0 +1,190 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#define MAX_DIGITS 1000
+//当我们试图用C语言计算两个特别大的数的和，用long long（64bit，2的31次方个数）也会不够用，此时我们就需要使用数组了
+
+
+
+/*int main(void) {
+	int str_a[MAX_DIGITS] = {};
+	scanf("%s", str_a);
+	printf("%d\n", str_a[1]);
+	return 0;
+}*/
+//以上是一个错误示范，错误点如下：
+//①定义的数组是整型的，但是scanf中使用的是%s读取字符串（但是使用%d也不行）
+/* 概念1：存储单位
+char c = '5';     // 1字节，存储字符'5'的ASCII码
+int n = 5;        // 4字节，存储数值5
+
+// 概念2：数组的连续性
+char str[5];      // 5个连续的字节
+int arr[5];       // 5个连续的int（20字节）
+
+// scanf("%s", str) → 填充连续的字节
+ scanf("%d", &arr[0]) → 填充一个int的4字节*/
+
+//也就是说，当我们定义某个类型的数组，它会分配 数组长度*数组size个字节给这个数组
+//而 %s 的功能是把你输入的每个东西都分别存在不同的字节中（1个字符/数字对应一个字节）
+///%d则是将输入的“一个整数”存入四个连续的字节（与int整型对应），如果用%s存int，假设存12345，就会让程序把“1”“2”“3”“4”对应的ASCII码存进这个int中导致int不知道这是在干嘛
+
+    //把字符串存进整型数组里面的函数
+int save (int len,char a[MAX_DIGITS],int b[MAX_DIGITS]) {
+	len = strlen(a);
+	for (int i = 0; i < len; i++) {
+		//注意到此处，如果大数为负数，b[len-1] = -3(因为负号的ASCII码是45)
+		b[len-i-1] = a[i] - '0';
+	}
+	return len;
+}
+
+    //计算大数加法（分情况讨论）
+void calculate(int a[MAX_DIGITS],int lena, int b[MAX_DIGITS],int lenb) {
+	int adup[MAX_DIGITS + 1] = { 0 };
+	int mid[MAX_DIGITS] = { 0 };//该数组用于a、b交换时做中介
+	int midle = 0;//该数用于交换a、b数组的长度
+	int c=0,i = 0; //这是进位/借位
+	int judge = 0;//来判断相同位数的两个数谁更大
+	int equal = 1;//判断两个正负相异的数的绝对值是否相同
+	//均为正/负数的情况
+	if ((a[lena - 1] != -3 && b[lenb - 1] != -3)||(a[lena - 1] == -3 && b[lenb - 1] == -3)) {
+		if (a[lena - 1] == -3 && b[lenb - 1] == -3) {
+			judge = 1;
+			a[lena - 1] = 0;
+			b[lenb - 1] = 0;
+			lena--;
+			lenb--;
+		}
+		if (lenb > lena) {
+			memmove(mid, a, MAX_DIGITS);
+			memmove(a, b, MAX_DIGITS);
+			memmove(b, mid, MAX_DIGITS);
+			midle = lena;
+			lena = lenb;
+			lenb = midle;
+		}
+		adup[lena] = 0;
+		for (i = 0; i < lenb; i++) {
+			if (a[i] + b[i]+ c > 9) {
+				adup[i] = a[i] + b[i] + c - 10;
+				c = 1;
+			}
+			else {
+				adup[i] = a[i] + b[i] + c;
+				c = 0; //此处如果没有进位就清除进位
+			}
+		} 
+		for (;i < lena; i++) {
+			if (a[i] + c > 9) {
+				adup[i] = a[i] + c - 10;
+				c = 1;
+			}
+			else {
+				adup[i] = a[i] + c;
+				c = 0;
+			}
+		}
+		if (judge == 1) printf("-");
+		if (c == 1) {
+			adup[i] = 1;  // i此时=lena
+			for (int j = 0; j < lena + 1; j++) {  // 用不同的循环变量
+				printf("%d", adup[lena - j]);
+			}
+		}
+		else {
+			for (i = 0; i < lena; i++) {
+				printf("%d", adup[lena - 1 - i]);
+			}
+		}
+		
+	}
+	//这里是一正一负的情况，分别有：|正|≥|负|、|正|＜|负|两种情况
+	else {
+		int jdg_a = 0;
+		int jdg_b = 0;
+		if (a[lena - 1] == -3) {
+			a[lena - 1] = 0;
+			lena--;
+			jdg_a = 1;
+		}
+		if (b[lenb - 1] == -3) {
+			b[lenb - 1] = 0;
+			lenb--;
+			jdg_b = 1;
+		}
+		if (lenb == lena) {
+			for (i = lena-1; i >-1; i--) {
+				if (b[i] - a[i] > 0) judge = 1;
+				if (b[i] - a[i] != 0) equal = 0;
+			}
+			if (equal == 1) {
+				printf("0");
+				return;
+			}
+		}
+		if (lenb > lena||judge==1) {
+			memmove(mid, a, MAX_DIGITS);
+			memmove(a, b, MAX_DIGITS);
+			memmove(b, mid, MAX_DIGITS);
+			midle = lena;
+			lena = lenb;
+			lenb = midle;
+			midle = jdg_a;
+			jdg_a = jdg_b;
+			jdg_b = midle;
+			
+		}
+		c = 0;
+		for (i = 0; i < lenb; i++) {
+			if (a[i] - b[i]-c >= 0) {
+				adup[i] = a[i] - b[i] - c;
+				c = 0;
+			}
+			else {
+				adup[i] = 10 + a[i] - b[i]-c;
+				c = 1;
+			}
+		}
+		for (; i < lena; i++) {
+			if (a[i] - c>=0) {
+				adup[i] = a[i] - c;
+				c = 0;
+			}else{
+				adup[i] = 10 + a[i] - c;
+				c = 1;
+			}
+		}
+		for (i = lena - 1; adup[i] == 0&&i>0;) {
+			i--;
+		}
+		if (jdg_a == 1) printf("-");
+		for (; i > -1; i--) {
+			printf("%d", adup[i]);
+		}
+	}
+	
+}
+
+int main(void) {
+	//定义两个大数字符串和后面要存进去的大数数组
+	char bignum1[MAX_DIGITS] = { 0 };
+	char bignum2[MAX_DIGITS] = { 0 };
+
+	int bni1[MAX_DIGITS] = { 0 };
+	int bni2[MAX_DIGITS] = { 0 };
+	int i = 0;
+
+	scanf("%s %s", bignum1,bignum2);
+	int len1 = strlen(bignum1);
+	int len2 = strlen(bignum2);
+	len1=save(len1,bignum1, bni1);
+	len2=save(len2,bignum2, bni2);
+	
+	//根据大数的长度、正负进行分类讨论
+	calculate(bni1, len1, bni2, len2);
+
+	return 0;
+}
