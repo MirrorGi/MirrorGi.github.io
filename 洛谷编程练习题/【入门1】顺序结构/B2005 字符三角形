@@ -1,0 +1,18 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#define MAX_DIGITS 1000
+
+
+int main(void) {
+	
+	char a = '0';
+	scanf("%c", &a);
+	printf("  %c  \n", a);
+	printf(" %c%c%c \n", a, a, a);
+	printf("%c%c%c%c%c", a, a, a, a, a);
+
+	return 0;
+}
